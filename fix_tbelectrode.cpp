@@ -72,7 +72,7 @@ FixGCkMC::FixGCkMC(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg)
 {
   //printf("Beginin of FixGCkMC\n");
-  if (narg < 10) error->all(FLERR,"Esteban: Illegal fix gcmc command");
+  if (narg < 7) error->all(FLERR,"Esteban: Illegal fix gcmc command");
 
   if (atom->molecular == 2)
     error->all(FLERR,"Fix gcmc does not (yet) work with atom_style template");
@@ -90,19 +90,14 @@ FixGCkMC::FixGCkMC(LAMMPS *lmp, int narg, char **arg) :
   // required args
 
 
-  reservoir_temperature = force->numeric(FLERR,arg[3]);
-  reactive_type = force->inumeric(FLERR,arg[4]);
-  product_type = force->inumeric(FLERR,arg[5]);
-  surf_type = force->inumeric(FLERR,arg[6]);
-  preexp = force->numeric(FLERR,arg[7]);
-  potential = force->numeric(FLERR,arg[8]);
-  seed = force->inumeric(FLERR,arg[9]);
+  potential = force->numeric(FLERR,arg[3]);
+  qsteps = force->inumeric(FLERR,arg[4]);
+  qtstep = force->numeric(FLERR,arg[5]);
+  hubbardp = force->inumeric(FLERR,arg[6]);
+
+
 
  //Esteban: reactive_type, product_type, E, region, nreactions
-
-  if (seed <= 0) error->all(FLERR,"Illegal fix gcmc command");
-  if (reservoir_temperature < 0.0)
-    error->all(FLERR,"Illegal fix gcmc command");
 
     //molflag = 0; // variable in 2012 verion // Jibao
     pairflag = 0; // added by Jibao. from Matias
@@ -111,7 +106,7 @@ FixGCkMC::FixGCkMC(LAMMPS *lmp, int narg, char **arg) :
 
   // read options from end of input line
 
-  options(narg-10,&arg[10]);
+  options(narg-7,&arg[7]);
 
   // random number generator, same for all procs
 
@@ -235,7 +230,7 @@ FixGCkMC::FixGCkMC(LAMMPS *lmp, int narg, char **arg) :
   reacte = NULL;
   reactg = NULL;
   prod = NULL;
-  
+
 
     if (comm->me == 0) printf("End of FixGCkMC::FixGCkMC()\n");
 }
@@ -667,11 +662,6 @@ void FixGCkMC::init()
       error->all(FLERR,"Cannot do GCMC on atoms in atom_modify first group");
   }
 
-  beta = 1.0/(1.38065e-23*reservoir_temperature);
-
-  kfreact = preexp*exp(0.5*1*1.6022e-19*beta*potential); //Esteban: Potencial estandard de la oxidacion del agua en V.
-  kbreact = preexp*exp(-0.5*1*1.6022e-19*beta*potential);
-
   imagezero = ((imageint) IMGMAX << IMG2BITS) |
              ((imageint) IMGMAX << IMGBITS) | IMGMAX;
 
@@ -755,7 +745,7 @@ void FixGCkMC::pre_exchange()
     } else {
         tbsize = atom->nlocal+nreact;
         MatrixXd fock_ab = MatrixXd::Zero(tbsize,tbsize);
-        
+
         biasedatoms = (int *) memory->smalloc((tbsize)*sizeof(int),
         "GCMC:biasedatoms");
         electrode = (int *) memory->smalloc((tbsize)*sizeof(int),
@@ -779,7 +769,7 @@ void FixGCkMC::pre_exchange()
         }
         fill_lists(biasedatoms, electrode, surf, reactg, reacte, prod);
         fill_fock(fock_ab);
-        
+
         MatrixXd fock_biased = fock_ab;
         applybias(fock_biased, biasedatoms, potential, tbsize);
         MatrixXcd dens_ab = MatrixXcd::Zero(tbsize,tbsize);
@@ -789,16 +779,16 @@ void FixGCkMC::pre_exchange()
 			dens_ab = readmatrix(tbsize);
 		}
         else {
-			
+
 			dens_ab = find_gs(fock_ab);
         }
-        
+
         dens_ref = getgs(fock_biased);
         MatrixXd refshape = stripdensref();
         MatrixXd hubbard = makehubbard(dens_ab);
-        
+
         //STRIP SYSTEM
-        
+
         //definir nuevas matrices
         MatrixXd local_fock_ab = localizeMatrixd(fock_ab);
         MatrixXcd local_dens_ab = localizeMatrix(dens_ab);
@@ -809,9 +799,9 @@ void FixGCkMC::pre_exchange()
         //MatrixXcd local_dens_ab = dens_ab;
         //MatrixXd local_refshape = refshape;
         //MatrixXcd local_dens_ref = dens_ref;
-        
-        
-        
+
+
+
         for(int ii=0; ii<8268; ii++)
         {
 		hubbard = makehubbard(dens_ab);
@@ -831,12 +821,12 @@ void FixGCkMC::pre_exchange()
           printf("%f\n",local_dens_ab.trace().imag());
         }
 	    }
-	    
+
 	    update_density(dens_ab, local_dens_ab);
 	    outcharge(dens_ab);
-	    
+
 	    write_matrix(dens_ab);
-	    
+
         memory->sfree(biasedatoms);
         memory->sfree(electrode);
         memory->sfree(surf);
@@ -850,7 +840,7 @@ void FixGCkMC::pre_exchange()
       //domain->pbc();    // added by Jibao; to prevent the error: ERROR on proc 0: Bond atoms 4205 4209 missing on proc 0 at step 285 (../neigh_bond.cpp:196)
       //comm->exchange(); // added by Jibao; to prevent the error: ERROR on proc 0: Bond atoms 4205 4209 missing on proc 0 at step 285 (../neigh_bond.cpp:196)
   }
-  
+
   next_reneighbor = update->ntimestep+1;
  //if (comm->me == 0) printf("End of FixGCkMC::pre_exchange()\n");
 }
@@ -864,7 +854,7 @@ void FixGCkMC::fill_lists(int *biasedatoms,
   int i, j;
   int *type = atom->type;
   int nlocal = atom->nlocal;
-  
+
   for(j=0; j<nlocal; j++){
 	  //i = local_reg_list[j];
 	  if(type[j] == 3){*(biasedatoms+j) = 1;}
@@ -881,32 +871,7 @@ MatrixXd FixGCkMC::localizeMatrixd(Ref<MatrixXd> m){
 	MatrixXd n = MatrixXd::Zero(nreg+nlocreact,nreg+nlocreact);
 	int iglob, jglob;
 	int nlocal = atom->nlocal;
-	
-	for(int j=0; j<nreg; j++){
-		for(int i=0; i<nreg; i++){
-			iglob = local_reg_list[i];
-			jglob = local_reg_list[j];
-			n(j,i) = m(jglob,iglob);				
-		}
-	}
-	for(int j=0; j<nlocreact; j++){
-		jglob = local_reg_list[nlocal+j];
-		n(nreg+j,nreg+j) = m(jglob,jglob);
-		for(int i=0; i<nreg; i++){
-			iglob = local_reg_list[i];
-			n(nreg+j,i) = m(jglob,iglob);
-			n(i,nreg+j) = m(iglob,jglob);
-		}
-	}
-	return n;
-}
 
-MatrixXcd FixGCkMC::localizeMatrix(Ref<MatrixXcd> m){
-	
-	MatrixXcd n = MatrixXcd::Zero(nreg+nlocreact,nreg+nlocreact);
-	int iglob, jglob;
-	int nlocal = atom->nlocal;
-	
 	for(int j=0; j<nreg; j++){
 		for(int i=0; i<nreg; i++){
 			iglob = local_reg_list[i];
@@ -923,15 +888,40 @@ MatrixXcd FixGCkMC::localizeMatrix(Ref<MatrixXcd> m){
 			n(i,nreg+j) = m(iglob,jglob);
 		}
 	}
-	
+	return n;
+}
+
+MatrixXcd FixGCkMC::localizeMatrix(Ref<MatrixXcd> m){
+
+	MatrixXcd n = MatrixXcd::Zero(nreg+nlocreact,nreg+nlocreact);
+	int iglob, jglob;
+	int nlocal = atom->nlocal;
+
+	for(int j=0; j<nreg; j++){
+		for(int i=0; i<nreg; i++){
+			iglob = local_reg_list[i];
+			jglob = local_reg_list[j];
+			n(j,i) = m(jglob,iglob);
+		}
+	}
+	for(int j=0; j<nlocreact; j++){
+		jglob = local_reg_list[nlocal+j];
+		n(nreg+j,nreg+j) = m(jglob,jglob);
+		for(int i=0; i<nreg; i++){
+			iglob = local_reg_list[i];
+			n(nreg+j,i) = m(jglob,iglob);
+			n(i,nreg+j) = m(iglob,jglob);
+		}
+	}
+
 	return n;
 }
 
 void FixGCkMC::update_density(Ref<MatrixXcd> dens_ab, Ref<MatrixXcd> local_dens_ab){
-	
+
 	int iglob, jglob;
 	int nlocal = atom->nlocal;
-	
+
 	for(int j=0; j<nreg; j++){
 		for(int i=0; i<nreg; i++){
 			iglob = local_reg_list[i];
@@ -959,7 +949,7 @@ void FixGCkMC::fill_fock(Ref<MatrixXd> fock_ab){
   int nlocal = atom->nlocal;
   double sitevect[7] = {-1.0, -0.020, -0.10, 0.0, 0.0, 0.0, 0.030};
   int table1[nlocal+nreact];
-  
+
   int i, j, k;
   k = 0;
   for(i=0; i<nlocal+nreact; i++){
@@ -975,7 +965,7 @@ void FixGCkMC::fill_fock(Ref<MatrixXd> fock_ab){
 		//printf("k=%i nreact=%i nreg=%i\n", k, nreact, nreg);
 		fock_ab(i,i) = -0.020;
 		fock_ab(i,nlocal+k) = -0.01;
-		fock_ab(nlocal+k,i) = -0.01; 
+		fock_ab(nlocal+k,i) = -0.01;
 		k++;
 	}
     else if(reacte[i]){fock_ab(i,i) = 0.030;}
@@ -1025,7 +1015,7 @@ bool FixGCkMC::exists_test (const std::string& name) {
 }
 
 MatrixXcd FixGCkMC::readmatrix(int size){
-	
+
 	MatrixXd resultr(size,size);
 	MatrixXd resulti(size,size);
 	MatrixXcd C1(size,size);
@@ -1036,7 +1026,7 @@ MatrixXcd FixGCkMC::readmatrix(int size){
     double *rbuff = new double[1000000];
     double *ibuff = new double[1000000];
     string aux;
-    
+
     ifstream infile;
     infile.open("density.dat");
     for (int i=0; i<size; i++){
@@ -1048,8 +1038,8 @@ MatrixXcd FixGCkMC::readmatrix(int size){
 			getline(stream, aux, ',');
 			rbuff[i*size+j] = stod(aux);
 			getline(stream, aux, ')');
-			ibuff[i*size+j] = stod(aux);            
-            
+			ibuff[i*size+j] = stod(aux);
+
         }
 	}
 
@@ -1060,7 +1050,7 @@ MatrixXcd FixGCkMC::readmatrix(int size){
         for (int j = 0; j < size; j++){
 			resultr(i,j) = rbuff[i*size+j];
 			resulti(i,j) = ibuff[i*size+j];
-			
+
 		}
 	}
     C1 = Re * resultr;
@@ -1069,7 +1059,7 @@ MatrixXcd FixGCkMC::readmatrix(int size){
     delete[] ibuff;
     return C1+C2;
 }
-    
+
 void FixGCkMC::write_matrix(MatrixXcd restartdens){
 	ofstream file("density.dat");
 	IOFormat HeavyFmt(FullPrecision);
@@ -1098,7 +1088,7 @@ MatrixXcd FixGCkMC::getgs(
 	int nat = atom->nlocal + nreact;
     int i, j, k, coef[nat];
     double val, valt;
-    
+
     EigenSolver<MatrixXd> fock_mb(fock, true);
     MatrixXd eigv = fock_mb.eigenvalues().real();
     MatrixXcd V = fock_mb.eigenvectors();
@@ -1123,7 +1113,7 @@ MatrixXcd FixGCkMC::getgs(
       i+=2;
     }
     for(i=0; i<nat; i++) dens_mb(i,i) = coef[i];
-    
+
     return V * dens_mb * V.inverse();
   }
 
@@ -1138,14 +1128,14 @@ double FixGCkMC::matrixdiff(Ref<MatrixXcd> A, Ref<MatrixXcd> B)
 	}
 	return result;
 }
-  
+
 MatrixXcd FixGCkMC::find_gs(Ref<MatrixXd> fock)
 {
 	MatrixXd fockint = fock;
 	MatrixXcd dens = getgs(fock);
 	MatrixXcd dens_old = dens;
 	double residue = 1;
-	
+
 	while (residue > 0.001){
 		fockint = fock + 0.0 * makehubbard(dens_old);
 		dens = getgs(fockint);
@@ -1181,7 +1171,7 @@ MatrixXd FixGCkMC::stripdensref()
 MatrixXd FixGCkMC::makehubbard(Ref<MatrixXcd> dens_ab)
 {
   int nlocal = atom->nlocal;
-  
+
   MatrixXd result = MatrixXd::Zero(nlocal+nreact,nlocal+nreact);
   for(int i=0; i<nlocal+nreact; i++){
 	  if(reacte[i] || reactg[i]){
@@ -1199,12 +1189,12 @@ MatrixXcd FixGCkMC::rungecuta(Ref<MatrixXcd> dens,
   double drate,
   Ref<MatrixXcd> densref,
   int step)
-{  
+{
   complex<double> im(0.0,-1.0*tstep);
-  
+
   MatrixXcd densdiff = refshape.cwiseProduct(dens - densref);
   hubbard = fock + hubbard;
-  
+
   MatrixXcd k1 = im * (hubbard * dens - dens * hubbard);
   MatrixXcd k2 = im * (hubbard * (dens+0.5*k1)-(dens+0.5*k1) * hubbard);
   //printf("charge input = %6.5f\n", (drate * densdiff).trace().real());
@@ -1227,7 +1217,7 @@ void FixGCkMC::outstepcharge(Ref<MatrixXd> fock, Ref<MatrixXcd> dens_ab, int ste
   int i, iglobal;
   double chargei[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   energy = (fock * dens_ab).trace().real();
-  
+
   for(i=0; i<nreg; i++)
   {
 	iglobal = local_reg_list[i];
@@ -1253,7 +1243,7 @@ void FixGCkMC::outcharge(Ref<MatrixXcd> dens_ab)
   int i, k = 0;
   int nlocal = atom->nlocal;
   double charge;
-  
+
   printf("Charges:");
   for(i=0; i<nlocal; i++)
   {
@@ -1534,10 +1524,10 @@ void FixGCkMC::update_region_atoms_list()
 		}
       }
     }
-    
+
   }
 
-  else { 
+  else {
 	  error->all(FLERR,"must have region");
   }
 
