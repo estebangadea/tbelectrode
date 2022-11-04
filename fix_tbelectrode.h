@@ -134,6 +134,8 @@ class Fixtbel : public Fix {
   int regionflag;           // 0 = anywhere in box, 1 = specific region
   class Region *iregion;            // gcmc region
   char *idregion;           // gcmc region id
+  int natoms_per_molecule;          // number of atoms in each gas molecule
+
 
   int groupbitall;          // group bitmask for inserted atoms
   int ngroups;              // number of group-ids for inserted atoms

@@ -66,7 +66,6 @@ enum{ATOM,MOLECULE};
 
 Fixtbel::Fixtbel(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg),
-  list(nullptr)
 {
   //printf("Beginin of Fixtbel\n");
   if (narg < 8)
@@ -450,7 +449,7 @@ MatrixXd Fixtbel::localizeMatrixd(Ref<MatrixXd> m){
 	return n;
 }
 
-MatrixXcd FixTbel::localizeMatrix(Ref<MatrixXcd> m){
+MatrixXcd Fixtbel::localizeMatrix(Ref<MatrixXcd> m){
 
 	MatrixXcd n = MatrixXcd::Zero(nreg+nlocreact,nreg+nlocreact);
 	int iglob, jglob;
