@@ -64,14 +64,14 @@ class FixGCkMC : public Fix {
   bool exists_test(const std::string& name);
   Eigen::MatrixXcd readmatrix(int size);
   void write_matrix(Eigen::MatrixXcd restartdens);
-  
+
   void update_density(Eigen::Ref<Eigen::MatrixXcd> dens_ab,
   Eigen::Ref<Eigen::MatrixXcd> local_dens_ab);
-  
+
   Eigen::MatrixXd makehubbard(Eigen::Ref<Eigen::MatrixXcd> dens_ab);
   double matrixdiff(Eigen::Ref<Eigen::MatrixXcd> A,
   Eigen::Ref<Eigen::MatrixXcd> B);
-  
+
   Eigen::MatrixXcd rungecuta(Eigen::Ref<Eigen::MatrixXcd> dens,
   Eigen::Ref<Eigen::MatrixXd> fock,
   Eigen::Ref<Eigen::MatrixXd>refshape,
@@ -80,22 +80,22 @@ class FixGCkMC : public Fix {
   double drate,
   Eigen::Ref<Eigen::MatrixXcd> densref,
   int step);
-  
+
   Eigen::MatrixXcd localizeMatrix(Eigen::Ref<Eigen::MatrixXcd> m);
   Eigen::MatrixXd localizeMatrixd(Eigen::Ref<Eigen::MatrixXd> m);
-    
+
   void outstepcharge(Eigen::Ref<Eigen::MatrixXd> fock,
   Eigen::Ref<Eigen::MatrixXcd> dens_ab,
   int step);
   void outcharge(Eigen::Ref<Eigen::MatrixXcd> dens_ab);
-  
+
   Eigen::MatrixXd stripdensref();
-  
+
   Eigen::MatrixXcd getgs(Eigen::Ref<Eigen::MatrixXd> fock);
   Eigen::MatrixXcd find_gs(Eigen::Ref<Eigen::MatrixXd> fock);
 
 
-   
+
   double energy(int, int, tagint, double *);
   double molecule_energy(tagint);
   double energy_full();
@@ -118,23 +118,11 @@ class FixGCkMC : public Fix {
     void create_gaslist(); // from Matias' version; added by Jibao
 
  private:
-    int pairflag;       // 0=lj/cut 1=Stw // from Matias' version; added by Jibao
-    //int pressflag;      // 0=no 1=yes        // from Matias' version; added by Jibao
-
-    double energyout;     // from from Matias' version; added by Jibao; added by Jibao
-    double randomsito;    // from Matias' version; added by Jibao
-    FILE *fp;             // from Matias' version; added by Jibao
-
-    //class PairHybrid *pairhybrid; // from Matias' version; added by Jibao
 
 
-
-  int molecule_group,molecule_group_bit;
-  int molecule_group_inversebit;
   int exclusion_group,exclusion_group_bit;
-  int ngcmc_type,nevery,seed;
+  int seed;
   int reactive_type, product_type, surf_type;  //Esteban
-  int ncycles,nexchanges,nmcmoves;
   int nreactions; //Esteban
   int ngas;                 // # of gas atoms on all procs
   int nreact, nlocreact, nreg; //Esteban
@@ -144,13 +132,8 @@ class FixGCkMC : public Fix {
   int nreact_before, nlocreact_before, nreg_before; //Esteban
   int mode;                 // ATOM or MOLECULE
   int regionflag;           // 0 = anywhere in box, 1 = specific region
-  int iregion;              // gcmc region
+  class Region *iregion;            // gcmc region
   char *idregion;           // gcmc region id
-  bool pressure_flag;       // true if user specified reservoir pressure
-  bool charge_flag;         // true if user specified atomic charge
-  bool full_flag;           // true if doing full system energy calculations
-
-  int natoms_per_molecule;  // number of atoms in each gas molecule
 
   int groupbitall;          // group bitmask for inserted atoms
   int ngroups;              // number of group-ids for inserted atoms
@@ -159,35 +142,20 @@ class FixGCkMC : public Fix {
   char** grouptypestrings;  // list of type-based group-ids for inserted atoms
   int* grouptypebits;       // list of type-based group bitmasks
   int* grouptypes;          // list of type-based group types
-  double ntranslation_attempts;
-  double ntranslation_successes;
-  double nrotation_attempts;
-  double nrotation_successes;
-  double ndeletion_attempts;
-  double ndeletion_successes;
-  double ninsertion_attempts;
-  double ninsertion_successes;
+
   double nfreaction_attempts; //Esteban
   double nfreaction_successes;
   double nbreaction_attempts;
   double nbreaction_successes;
 
   int gcmc_nmax, tbsize;
-  int max_region_attempts;
-  double gas_mass;
+  int qsteps;
   double reservoir_temperature;
-  double tfac_insert;
-  double chemical_potential;
-  double displace;
-  double max_rotation_angle;
-  double beta,zz,sigma,volume;
-  double kfreact, kbreact, potential, preexp, electrode_radi, electrode_h;//Esteban
-  double center[3]; //Esteban
-  double pressure,fugacity_coeff,charge;
+  double volume;
+  double potential, qtstep, hubbardp, drate;//Esteban
   double xlo,xhi,ylo,yhi,zlo,zhi;
   double region_xlo,region_xhi,region_ylo,region_yhi,region_zlo,region_zhi;
   double region_volume;
-  double energy_stored;
   double *sublo,*subhi;
   int *local_gas_list;
   int *local_react_list;
@@ -201,10 +169,8 @@ class FixGCkMC : public Fix {
   int *reactg;
   int *reacte;
   int *prod;
-  
-  imageint imagezero;
 
-  double energy_intra;
+  imageint imagezero;
 
   class Pair *pair;
 
@@ -215,13 +181,9 @@ class FixGCkMC : public Fix {
 
   class Atom *model_atom;
 
-  class Molecule **onemols;
   int imol,nmol;
   double **coords;
   imageint *imageflags;
-  class Fix *fixshake;
-  int shakeflag;
-  char *idshake;
   int triclinic;                         // 0 = orthog box, 1 = triclinic
 
   class Compute *c_pe;
