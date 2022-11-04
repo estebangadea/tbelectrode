@@ -13,12 +13,12 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(gckmc,FixGCkMC)
+FixStyle(tbel,FixTBel)
 
 #else
 
-#ifndef LMP_FIX_GCKMC_H
-#define LMP_FIX_GCKMC_H
+#ifndef LMP_FIX_TBEL_H
+#define LMP_FIX_TBEL_H
 
 #include <stdio.h>
 #include <eigen3/Eigen/Dense>
@@ -30,10 +30,10 @@ FixStyle(gckmc,FixGCkMC)
 
 namespace LAMMPS_NS {
 
-class FixGCkMC : public Fix {
+class FixTBel : public Fix {
  public:
-  FixGCkMC(class LAMMPS *, int, char **);
-  ~FixGCkMC();
+  FixTBel(class LAMMPS *, int, char **);
+  ~FixTBel();
   int setmask();
   void init();
   void pre_exchange();

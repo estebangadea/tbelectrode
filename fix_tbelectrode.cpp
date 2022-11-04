@@ -21,7 +21,7 @@
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Eigenvalues>
 #include <eigen3/Eigen/SVD>
-#include "fix_gckmc_new.h"
+#include "fix_tbelectrode.h"
 #include "atom.h"
 #include "atom_vec.h"
 #include "atom_vec_hybrid.h"
@@ -72,7 +72,7 @@ Fixtbel::Fixtbel(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg),
   list(nullptr)
 {
-  //printf("Beginin of FixGCkMC\n");
+  //printf("Beginin of FixTBel\n");
   if (narg < 8)
     error->all(FLERR,"Incorrect number of fix tbel arguments {}", narg);
 
@@ -167,7 +167,7 @@ Fixtbel::Fixtbel(LAMMPS *lmp, int narg, char **arg) :
    parse optional parameters at end of input line
 ------------------------------------------------------------------------- */
 
-void FixGCkMC::options(int narg, char **arg)
+void FixTBel::options(int narg, char **arg)
 {
   if (narg < 0)
     utils::missing_cmd_args(FLERR, "fix kmc", error);
@@ -199,9 +199,9 @@ void FixGCkMC::options(int narg, char **arg)
 
 /* ---------------------------------------------------------------------- */
 
-FixGCkMC::~FixGCkMC()
+FixTBel::~FixTBel()
 {
-  //  printf("FixGCkMC()");
+  //  printf("FixTBel()");
   if (regionflag) delete [] idregion;
   delete random_equal;
   delete random_unequal;
@@ -219,12 +219,12 @@ FixGCkMC::~FixGCkMC()
   memory->destroy(reacte);
   memory->destroy(reactg);
   memory->destroy(prod);
-   // if (comm->me == 0) printf("End of FixGCkMC::~FixGCkMC()\n");
+   // if (comm->me == 0) printf("End of FixTBel::~FixTBel()\n");
 }
 
 /* ---------------------------------------------------------------------- */
 
-int FixGCkMC::setmask()
+int FixTBel::setmask()
 {
   int mask = 0;
   mask |= PRE_EXCHANGE;
@@ -233,7 +233,7 @@ int FixGCkMC::setmask()
 
 /* ---------------------------------------------------------------------- */
 
-void Fixkmc::init()
+void FixTBel::init()
 {
   triclinic = domain->triclinic;
 
@@ -280,7 +280,7 @@ void Fixkmc::init()
    so that ghost atoms and neighbor lists will be correct
 ------------------------------------------------------------------------- */
 
-void FixGCkMC::pre_exchange()
+void FixTBel::pre_exchange()
 {
 
   if (next_reneighbor != update->ntimestep) return;
@@ -405,10 +405,10 @@ void FixGCkMC::pre_exchange()
         memory->sfree(prod);
 
   next_reneighbor = update->ntimestep+1;
- //if (comm->me == 0) printf("End of FixGCkMC::pre_exchange()\n");
+ //if (comm->me == 0) printf("End of FixTBel::pre_exchange()\n");
 }
 
-void FixGCkMC::fill_lists(int *biasedatoms,
+void FixTBel::fill_lists(int *biasedatoms,
                           int *electrode,
                           int *surf,
                           int *reactg,
@@ -430,7 +430,7 @@ void FixGCkMC::fill_lists(int *biasedatoms,
 	  *(reacte+i) = 1;
   }
 }
-MatrixXd FixGCkMC::localizeMatrixd(Ref<MatrixXd> m){
+MatrixXd FixTBel::localizeMatrixd(Ref<MatrixXd> m){
 	MatrixXd n = MatrixXd::Zero(nreg+nlocreact,nreg+nlocreact);
 	int iglob, jglob;
 	int nlocal = atom->nlocal;
@@ -454,7 +454,7 @@ MatrixXd FixGCkMC::localizeMatrixd(Ref<MatrixXd> m){
 	return n;
 }
 
-MatrixXcd FixGCkMC::localizeMatrix(Ref<MatrixXcd> m){
+MatrixXcd FixTbel::localizeMatrix(Ref<MatrixXcd> m){
 
 	MatrixXcd n = MatrixXcd::Zero(nreg+nlocreact,nreg+nlocreact);
 	int iglob, jglob;
@@ -480,7 +480,7 @@ MatrixXcd FixGCkMC::localizeMatrix(Ref<MatrixXcd> m){
 	return n;
 }
 
-void FixGCkMC::update_density(Ref<MatrixXcd> dens_ab, Ref<MatrixXcd> local_dens_ab){
+void FixTBel::update_density(Ref<MatrixXcd> dens_ab, Ref<MatrixXcd> local_dens_ab){
 
 	int iglob, jglob;
 	int nlocal = atom->nlocal;
@@ -504,7 +504,7 @@ void FixGCkMC::update_density(Ref<MatrixXcd> dens_ab, Ref<MatrixXcd> local_dens_
 }
 
 
-void FixGCkMC::fill_fock(Ref<MatrixXd> fock_ab){
+void FixTBel::fill_fock(Ref<MatrixXd> fock_ab){
   //printf("inside fill fock\n");
   double **x = atom->x;
   double dx, dy, dz, dr;
@@ -572,12 +572,12 @@ void FixGCkMC::fill_fock(Ref<MatrixXd> fock_ab){
   }
 }
 
-bool FixGCkMC::exists_test (const std::string& name) {
+bool FixTBel::exists_test (const std::string& name) {
     ifstream f(name.c_str());
     return f.good();
 }
 
-MatrixXcd FixGCkMC::readmatrix(int size){
+MatrixXcd FixTBel::readmatrix(int size){
 
 	MatrixXd resultr(size,size);
 	MatrixXd resulti(size,size);
@@ -623,7 +623,7 @@ MatrixXcd FixGCkMC::readmatrix(int size){
     return C1+C2;
 }
 
-void FixGCkMC::write_matrix(MatrixXcd restartdens){
+void FixTBel::write_matrix(MatrixXcd restartdens){
 	ofstream file("density.dat");
 	IOFormat HeavyFmt(FullPrecision);
     if (file.is_open())
@@ -632,7 +632,7 @@ void FixGCkMC::write_matrix(MatrixXcd restartdens){
     }
 }
 
-void FixGCkMC::applybias(Ref<MatrixXd> fock_ab,
+void FixTBel::applybias(Ref<MatrixXd> fock_ab,
   int *biasedatoms,
   double biasterm,
   int size)
@@ -645,7 +645,7 @@ void FixGCkMC::applybias(Ref<MatrixXd> fock_ab,
   return;
 }
 
-MatrixXcd FixGCkMC::getgs(
+MatrixXcd FixTBel::getgs(
   Ref<MatrixXd> fock)
   {
 	int nat = atom->nlocal + nreact;
@@ -680,7 +680,7 @@ MatrixXcd FixGCkMC::getgs(
     return V * dens_mb * V.inverse();
   }
 
-double FixGCkMC::matrixdiff(Ref<MatrixXcd> A, Ref<MatrixXcd> B)
+double FixTBel::matrixdiff(Ref<MatrixXcd> A, Ref<MatrixXcd> B)
 {
 	double result = 0.0;
 	int nat = atom->nlocal + nreact;
@@ -692,7 +692,7 @@ double FixGCkMC::matrixdiff(Ref<MatrixXcd> A, Ref<MatrixXcd> B)
 	return result;
 }
 
-MatrixXcd FixGCkMC::find_gs(Ref<MatrixXd> fock)
+MatrixXcd FixTBel::find_gs(Ref<MatrixXd> fock)
 {
 	MatrixXd fockint = fock;
 	MatrixXcd dens = getgs(fock);
@@ -710,7 +710,7 @@ MatrixXcd FixGCkMC::find_gs(Ref<MatrixXd> fock)
 }
 
 
-MatrixXd FixGCkMC::stripdensref()
+MatrixXd FixTBel::stripdensref()
 {
   int i, j;
   int nlocal = atom->nlocal;
@@ -731,7 +731,7 @@ MatrixXd FixGCkMC::stripdensref()
   return m;
 }
 
-MatrixXd FixGCkMC::makehubbard(Ref<MatrixXcd> dens_ab)
+MatrixXd FixTBel::makehubbard(Ref<MatrixXcd> dens_ab)
 {
   int nlocal = atom->nlocal;
 
@@ -744,7 +744,7 @@ MatrixXd FixGCkMC::makehubbard(Ref<MatrixXcd> dens_ab)
   return result;
 }
 
-MatrixXcd FixGCkMC::rungecuta(Ref<MatrixXcd> dens,
+MatrixXcd FixTBel::rungecuta(Ref<MatrixXcd> dens,
   Ref<MatrixXd> fock,
   Ref<MatrixXd> refshape,
   Ref<MatrixXd> hubbard,
@@ -764,7 +764,7 @@ MatrixXcd FixGCkMC::rungecuta(Ref<MatrixXcd> dens,
   return dens + k2 - tstep * drate * densdiff;
 }
 
-void FixGCkMC::outinitial(Ref<MatrixXd> fock)
+void FixTBel::outinitial(Ref<MatrixXd> fock)
 {
   ofstream out;
   out.open ("TB_gs.dat");
@@ -774,7 +774,7 @@ void FixGCkMC::outinitial(Ref<MatrixXd> fock)
   return;
 }
 
-void FixGCkMC::outstepcharge(Ref<MatrixXd> fock, Ref<MatrixXcd> dens_ab, int step)
+void FixTBel::outstepcharge(Ref<MatrixXd> fock, Ref<MatrixXcd> dens_ab, int step)
 {
   double energy;
   int i, iglobal;
@@ -800,7 +800,7 @@ void FixGCkMC::outstepcharge(Ref<MatrixXd> fock, Ref<MatrixXcd> dens_ab, int ste
   return;
 }
 
-void FixGCkMC::outcharge(Ref<MatrixXcd> dens_ab)
+void FixTBel::outcharge(Ref<MatrixXcd> dens_ab)
 {
   double **x = atom->x;
   int i, k = 0;
@@ -825,9 +825,9 @@ void FixGCkMC::outcharge(Ref<MatrixXcd> dens_ab)
 ------------------------------------------------------------------------- */
 //Esteban: asegurarse de que actualize correctamente luego de una reaccion
 
-void FixGCkMC::update_gas_atoms_list()
+void FixTBel::update_gas_atoms_list()
 {
-//printf("Begin of FixGCkMC::update_gas_atoms_list()\n");
+//printf("Begin of FixTBel::update_gas_atoms_list()\n");
   int nlocal = atom->nlocal;
   int *mask = atom->mask;
   tagint *molecule = atom->molecule;
@@ -853,7 +853,7 @@ void FixGCkMC::update_gas_atoms_list()
   }
 
   ngas_local = 0;
- //printf("End of FixGCkMC::update_gas_atoms_list()\n");
+ //printf("End of FixTBel::update_gas_atoms_list()\n");
 
 }
 
@@ -861,9 +861,9 @@ void FixGCkMC::update_gas_atoms_list()
    update the list of reactive atoms
 ------------------------------------------------------------------------- */
 
-void FixGCkMC::update_reactive_atoms_list()
+void FixTBel::update_reactive_atoms_list()
 {
- //if (comm->me == 0) printf("Begin of FixGCkMC::update_reactive_atoms_list()\n");
+ //if (comm->me == 0) printf("Begin of FixTBel::update_reactive_atoms_list()\n");
   int nlocal = atom->nlocal;
   int *mask = atom->mask;
   tagint *molecule = atom->molecule;
@@ -915,9 +915,9 @@ void FixGCkMC::update_reactive_atoms_list()
    update the list of product atoms
 ------------------------------------------------------------------------- */
 
-void FixGCkMC::update_locreact_atoms_list()
+void FixTBel::update_locreact_atoms_list()
 {
- //if (comm->me == 0) printf("Begin of FixGCkMC::update_product_atoms_list()\n");
+ //if (comm->me == 0) printf("Begin of FixTBel::update_product_atoms_list()\n");
   int nlocal = atom->nlocal;
   int *mask = atom->mask;
   tagint *molecule = atom->molecule;
@@ -962,9 +962,9 @@ void FixGCkMC::update_locreact_atoms_list()
    update the list of reactive atoms
 ------------------------------------------------------------------------- */
 
-void FixGCkMC::update_region_atoms_list()
+void FixTBel::update_region_atoms_list()
 {
- //if (comm->me == 0) printf("Begin of FixGCkMC::update_reactive_atoms_list()\n");
+ //if (comm->me == 0) printf("Begin of FixTBel::update_reactive_atoms_list()\n");
   int nlocal = atom->nlocal;
   double **x = atom->x;
   int *type = atom->type;
@@ -1004,7 +1004,7 @@ void FixGCkMC::update_region_atoms_list()
   return acceptance ratios
 ------------------------------------------------------------------------- */
 
-double FixGCkMC::compute_vector(int n)
+double FixTBel::compute_vector(int n)
 {
   //if (n == 0) return ntranslation_attempts;
 
@@ -1016,7 +1016,7 @@ double FixGCkMC::compute_vector(int n)
    memory usage of local atom-based arrays
 ------------------------------------------------------------------------- */
 
-double FixGCkMC::memory_usage()
+double FixTBel::memory_usage()
 {
   double bytes = gcmc_nmax * sizeof(int);
   return bytes;
@@ -1026,7 +1026,7 @@ double FixGCkMC::memory_usage()
    pack entire state of Fix into one write
 ------------------------------------------------------------------------- */
 
-void FixGCkMC::write_restart(FILE *fp)
+void FixTBel::write_restart(FILE *fp)
 {
   int n = 0;
   double list[4];
@@ -1044,7 +1044,7 @@ void FixGCkMC::write_restart(FILE *fp)
    use state info from restart file to restart the Fix
 ------------------------------------------------------------------------- */
 
-void FixGCkMC::restart(char *buf)
+void FixTBel::restart(char *buf)
 {
   int n = 0;
   double *list = (double *) buf;
