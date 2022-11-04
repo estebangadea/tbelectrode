@@ -53,10 +53,6 @@
 #include <fstream>
 #include <sys/stat.h>
 #include <complex>
-#include "pair_hybrid_overlay.h"    // added by Jibao
-#include "pair_sw.h"        // added by Jibao
-//#include "pair_sw0.h"        // added by Jibao
-#include "pair_hybrid.h"        // added by Jibao
 
 using namespace std;
 using namespace Eigen;
