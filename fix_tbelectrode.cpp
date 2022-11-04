@@ -68,7 +68,7 @@ Fixtbel::Fixtbel(LAMMPS *lmp, int narg, char **arg) :
   Fix(lmp, narg, arg),
   list(nullptr)
 {
-  //printf("Beginin of FixTBel\n");
+  //printf("Beginin of Fixtbel\n");
   if (narg < 8)
     error->all(FLERR,"Incorrect number of fix tbel arguments {}", narg);
 
@@ -163,7 +163,7 @@ Fixtbel::Fixtbel(LAMMPS *lmp, int narg, char **arg) :
    parse optional parameters at end of input line
 ------------------------------------------------------------------------- */
 
-void FixTBel::options(int narg, char **arg)
+void Fixtbel::options(int narg, char **arg)
 {
   if (narg < 0)
     utils::missing_cmd_args(FLERR, "fix kmc", error);
@@ -195,9 +195,9 @@ void FixTBel::options(int narg, char **arg)
 
 /* ---------------------------------------------------------------------- */
 
-FixTBel::~FixTBel()
+Fixtbel::~Fixtbel()
 {
-  //  printf("FixTBel()");
+  //  printf("Fixtbel()");
   if (regionflag) delete [] idregion;
   delete random_equal;
   delete random_unequal;
@@ -215,12 +215,12 @@ FixTBel::~FixTBel()
   memory->destroy(reacte);
   memory->destroy(reactg);
   memory->destroy(prod);
-   // if (comm->me == 0) printf("End of FixTBel::~FixTBel()\n");
+   // if (comm->me == 0) printf("End of Fixtbel::~Fixtbel()\n");
 }
 
 /* ---------------------------------------------------------------------- */
 
-int FixTBel::setmask()
+int Fixtbel::setmask()
 {
   int mask = 0;
   mask |= PRE_EXCHANGE;
@@ -229,7 +229,7 @@ int FixTBel::setmask()
 
 /* ---------------------------------------------------------------------- */
 
-void FixTBel::init()
+void Fixtbel::init()
 {
   triclinic = domain->triclinic;
 
@@ -276,7 +276,7 @@ void FixTBel::init()
    so that ghost atoms and neighbor lists will be correct
 ------------------------------------------------------------------------- */
 
-void FixTBel::pre_exchange()
+void Fixtbel::pre_exchange()
 {
 
   if (next_reneighbor != update->ntimestep) return;
@@ -401,10 +401,10 @@ void FixTBel::pre_exchange()
         memory->sfree(prod);
 
   next_reneighbor = update->ntimestep+1;
- //if (comm->me == 0) printf("End of FixTBel::pre_exchange()\n");
+ //if (comm->me == 0) printf("End of Fixtbel::pre_exchange()\n");
 }
 
-void FixTBel::fill_lists(int *biasedatoms,
+void Fixtbel::fill_lists(int *biasedatoms,
                           int *electrode,
                           int *surf,
                           int *reactg,
@@ -426,7 +426,7 @@ void FixTBel::fill_lists(int *biasedatoms,
 	  *(reacte+i) = 1;
   }
 }
-MatrixXd FixTBel::localizeMatrixd(Ref<MatrixXd> m){
+MatrixXd Fixtbel::localizeMatrixd(Ref<MatrixXd> m){
 	MatrixXd n = MatrixXd::Zero(nreg+nlocreact,nreg+nlocreact);
 	int iglob, jglob;
 	int nlocal = atom->nlocal;
@@ -476,7 +476,7 @@ MatrixXcd FixTbel::localizeMatrix(Ref<MatrixXcd> m){
 	return n;
 }
 
-void FixTBel::update_density(Ref<MatrixXcd> dens_ab, Ref<MatrixXcd> local_dens_ab){
+void Fixtbel::update_density(Ref<MatrixXcd> dens_ab, Ref<MatrixXcd> local_dens_ab){
 
 	int iglob, jglob;
 	int nlocal = atom->nlocal;
@@ -500,7 +500,7 @@ void FixTBel::update_density(Ref<MatrixXcd> dens_ab, Ref<MatrixXcd> local_dens_a
 }
 
 
-void FixTBel::fill_fock(Ref<MatrixXd> fock_ab){
+void Fixtbel::fill_fock(Ref<MatrixXd> fock_ab){
   //printf("inside fill fock\n");
   double **x = atom->x;
   double dx, dy, dz, dr;
@@ -568,12 +568,12 @@ void FixTBel::fill_fock(Ref<MatrixXd> fock_ab){
   }
 }
 
-bool FixTBel::exists_test (const std::string& name) {
+bool Fixtbel::exists_test (const std::string& name) {
     ifstream f(name.c_str());
     return f.good();
 }
 
-MatrixXcd FixTBel::readmatrix(int size){
+MatrixXcd Fixtbel::readmatrix(int size){
 
 	MatrixXd resultr(size,size);
 	MatrixXd resulti(size,size);
@@ -619,7 +619,7 @@ MatrixXcd FixTBel::readmatrix(int size){
     return C1+C2;
 }
 
-void FixTBel::write_matrix(MatrixXcd restartdens){
+void Fixtbel::write_matrix(MatrixXcd restartdens){
 	ofstream file("density.dat");
 	IOFormat HeavyFmt(FullPrecision);
     if (file.is_open())
@@ -628,7 +628,7 @@ void FixTBel::write_matrix(MatrixXcd restartdens){
     }
 }
 
-void FixTBel::applybias(Ref<MatrixXd> fock_ab,
+void Fixtbel::applybias(Ref<MatrixXd> fock_ab,
   int *biasedatoms,
   double biasterm,
   int size)
@@ -641,7 +641,7 @@ void FixTBel::applybias(Ref<MatrixXd> fock_ab,
   return;
 }
 
-MatrixXcd FixTBel::getgs(
+MatrixXcd Fixtbel::getgs(
   Ref<MatrixXd> fock)
   {
 	int nat = atom->nlocal + nreact;
@@ -676,7 +676,7 @@ MatrixXcd FixTBel::getgs(
     return V * dens_mb * V.inverse();
   }
 
-double FixTBel::matrixdiff(Ref<MatrixXcd> A, Ref<MatrixXcd> B)
+double Fixtbel::matrixdiff(Ref<MatrixXcd> A, Ref<MatrixXcd> B)
 {
 	double result = 0.0;
 	int nat = atom->nlocal + nreact;
@@ -688,7 +688,7 @@ double FixTBel::matrixdiff(Ref<MatrixXcd> A, Ref<MatrixXcd> B)
 	return result;
 }
 
-MatrixXcd FixTBel::find_gs(Ref<MatrixXd> fock)
+MatrixXcd Fixtbel::find_gs(Ref<MatrixXd> fock)
 {
 	MatrixXd fockint = fock;
 	MatrixXcd dens = getgs(fock);
@@ -706,7 +706,7 @@ MatrixXcd FixTBel::find_gs(Ref<MatrixXd> fock)
 }
 
 
-MatrixXd FixTBel::stripdensref()
+MatrixXd Fixtbel::stripdensref()
 {
   int i, j;
   int nlocal = atom->nlocal;
@@ -727,7 +727,7 @@ MatrixXd FixTBel::stripdensref()
   return m;
 }
 
-MatrixXd FixTBel::makehubbard(Ref<MatrixXcd> dens_ab)
+MatrixXd Fixtbel::makehubbard(Ref<MatrixXcd> dens_ab)
 {
   int nlocal = atom->nlocal;
 
@@ -740,7 +740,7 @@ MatrixXd FixTBel::makehubbard(Ref<MatrixXcd> dens_ab)
   return result;
 }
 
-MatrixXcd FixTBel::rungecuta(Ref<MatrixXcd> dens,
+MatrixXcd Fixtbel::rungecuta(Ref<MatrixXcd> dens,
   Ref<MatrixXd> fock,
   Ref<MatrixXd> refshape,
   Ref<MatrixXd> hubbard,
@@ -760,7 +760,7 @@ MatrixXcd FixTBel::rungecuta(Ref<MatrixXcd> dens,
   return dens + k2 - tstep * drate * densdiff;
 }
 
-void FixTBel::outinitial(Ref<MatrixXd> fock)
+void Fixtbel::outinitial(Ref<MatrixXd> fock)
 {
   ofstream out;
   out.open ("TB_gs.dat");
@@ -770,7 +770,7 @@ void FixTBel::outinitial(Ref<MatrixXd> fock)
   return;
 }
 
-void FixTBel::outstepcharge(Ref<MatrixXd> fock, Ref<MatrixXcd> dens_ab, int step)
+void Fixtbel::outstepcharge(Ref<MatrixXd> fock, Ref<MatrixXcd> dens_ab, int step)
 {
   double energy;
   int i, iglobal;
@@ -796,7 +796,7 @@ void FixTBel::outstepcharge(Ref<MatrixXd> fock, Ref<MatrixXcd> dens_ab, int step
   return;
 }
 
-void FixTBel::outcharge(Ref<MatrixXcd> dens_ab)
+void Fixtbel::outcharge(Ref<MatrixXcd> dens_ab)
 {
   double **x = atom->x;
   int i, k = 0;
@@ -821,9 +821,9 @@ void FixTBel::outcharge(Ref<MatrixXcd> dens_ab)
 ------------------------------------------------------------------------- */
 //Esteban: asegurarse de que actualize correctamente luego de una reaccion
 
-void FixTBel::update_gas_atoms_list()
+void Fixtbel::update_gas_atoms_list()
 {
-//printf("Begin of FixTBel::update_gas_atoms_list()\n");
+//printf("Begin of Fixtbel::update_gas_atoms_list()\n");
   int nlocal = atom->nlocal;
   int *mask = atom->mask;
   tagint *molecule = atom->molecule;
@@ -849,7 +849,7 @@ void FixTBel::update_gas_atoms_list()
   }
 
   ngas_local = 0;
- //printf("End of FixTBel::update_gas_atoms_list()\n");
+ //printf("End of Fixtbel::update_gas_atoms_list()\n");
 
 }
 
@@ -857,9 +857,9 @@ void FixTBel::update_gas_atoms_list()
    update the list of reactive atoms
 ------------------------------------------------------------------------- */
 
-void FixTBel::update_reactive_atoms_list()
+void Fixtbel::update_reactive_atoms_list()
 {
- //if (comm->me == 0) printf("Begin of FixTBel::update_reactive_atoms_list()\n");
+ //if (comm->me == 0) printf("Begin of Fixtbel::update_reactive_atoms_list()\n");
   int nlocal = atom->nlocal;
   int *mask = atom->mask;
   tagint *molecule = atom->molecule;
@@ -911,9 +911,9 @@ void FixTBel::update_reactive_atoms_list()
    update the list of product atoms
 ------------------------------------------------------------------------- */
 
-void FixTBel::update_locreact_atoms_list()
+void Fixtbel::update_locreact_atoms_list()
 {
- //if (comm->me == 0) printf("Begin of FixTBel::update_product_atoms_list()\n");
+ //if (comm->me == 0) printf("Begin of Fixtbel::update_product_atoms_list()\n");
   int nlocal = atom->nlocal;
   int *mask = atom->mask;
   tagint *molecule = atom->molecule;
@@ -958,9 +958,9 @@ void FixTBel::update_locreact_atoms_list()
    update the list of reactive atoms
 ------------------------------------------------------------------------- */
 
-void FixTBel::update_region_atoms_list()
+void Fixtbel::update_region_atoms_list()
 {
- //if (comm->me == 0) printf("Begin of FixTBel::update_reactive_atoms_list()\n");
+ //if (comm->me == 0) printf("Begin of Fixtbel::update_reactive_atoms_list()\n");
   int nlocal = atom->nlocal;
   double **x = atom->x;
   int *type = atom->type;
@@ -1000,7 +1000,7 @@ void FixTBel::update_region_atoms_list()
   return acceptance ratios
 ------------------------------------------------------------------------- */
 
-double FixTBel::compute_vector(int n)
+double Fixtbel::compute_vector(int n)
 {
   //if (n == 0) return ntranslation_attempts;
 
@@ -1012,7 +1012,7 @@ double FixTBel::compute_vector(int n)
    memory usage of local atom-based arrays
 ------------------------------------------------------------------------- */
 
-double FixTBel::memory_usage()
+double Fixtbel::memory_usage()
 {
   double bytes = gcmc_nmax * sizeof(int);
   return bytes;
@@ -1022,7 +1022,7 @@ double FixTBel::memory_usage()
    pack entire state of Fix into one write
 ------------------------------------------------------------------------- */
 
-void FixTBel::write_restart(FILE *fp)
+void Fixtbel::write_restart(FILE *fp)
 {
   int n = 0;
   double list[4];
@@ -1040,7 +1040,7 @@ void FixTBel::write_restart(FILE *fp)
    use state info from restart file to restart the Fix
 ------------------------------------------------------------------------- */
 
-void FixTBel::restart(char *buf)
+void Fixtbel::restart(char *buf)
 {
   int n = 0;
   double *list = (double *) buf;
