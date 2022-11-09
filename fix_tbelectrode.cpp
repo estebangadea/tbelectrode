@@ -65,7 +65,7 @@ enum{ATOM,MOLECULE};
 /* ---------------------------------------------------------------------- */
 
 Fixtbel::Fixtbel(LAMMPS *lmp, int narg, char **arg) :
-  Fix(lmp, narg, arg),
+  Fix(lmp, narg, arg)
 {
   //printf("Beginin of Fixtbel\n");
   if (narg < 8)
