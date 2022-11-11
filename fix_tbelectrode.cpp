@@ -92,6 +92,7 @@ Fixtbel::Fixtbel(LAMMPS *lmp, int narg, char **arg) :
   hubbardp = utils::numeric(FLERR,arg[6],false,lmp);
   drate = utils::numeric(FLERR,arg[7],false,lmp);
   seed = 25091993;
+  reactive_type = 1;
 
   if (seed <= 0)
     error->all(FLERR,"Illegal fix kmc seed {}", seed);
@@ -231,14 +232,6 @@ int Fixtbel::setmask()
 void Fixtbel::init()
 {
   triclinic = domain->triclinic;
-
-  int *type = atom->type;
-  if (mode == ATOM) {
-    if (product_type <= 0 || product_type > atom->ntypes)
-      error->all(FLERR,"Invalid product atom type in fix kmc command {}", product_type);
-    if (reactive_type <= 0 || reactive_type > atom->ntypes)
-      error->all(FLERR,"Invalid reactive atom type in fix kmc command {}", reactive_type);
-  }
 
   if (domain->dimension == 2)
     error->all(FLERR,"Cannot use fix kmc in a 2d simulation");
