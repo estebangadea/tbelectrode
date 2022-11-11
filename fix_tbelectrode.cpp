@@ -93,6 +93,7 @@ Fixtbel::Fixtbel(LAMMPS *lmp, int narg, char **arg) :
   drate = utils::numeric(FLERR,arg[7],false,lmp);
   seed = 25091993;
   reactive_type = 1;
+  reservoir_temperature = 298.0;
 
   if (seed <= 0)
     error->all(FLERR,"Illegal fix kmc seed {}", seed);
