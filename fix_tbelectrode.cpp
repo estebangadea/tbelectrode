@@ -532,18 +532,18 @@ void Fixtbel::fill_fock(Ref<MatrixXd> fock_ab){
 		dz = (x[i][2]-x[j][2]);
 		dz = dz - (zhi-zlo) * (int) (dz/(zhi-zlo));
 		dr = dx*dx + dy*dy + dz*dz;
-		if(dr<16){
+		if(dr<36){
 			//printf("inside if2\n");
 			if(surf[i] && reactg[j]){
 				//printf("inside if3\n");
-			  dr = 0.005*(exp(-1.0*sqrt(dr)-exp(-4.0)));
+			  dr = 0.005*(exp(-1.0*sqrt(dr)));
               fock_ab(i,j) = dr;
               fock_ab(j,i) = dr;
               fock_ab(i,table1[j]) = dr;
               fock_ab(table1[j],i) = dr;
 	        }
 	        else if(surf[j] && reactg[i]){
-			  dr = 0.005*(exp(-1.0*sqrt(dr)-exp(-4.0)));
+			  dr = 0.005*(exp(-1.0*sqrt(dr)));
               fock_ab(i,j) = dr;
               fock_ab(j,i) = dr;
               fock_ab(j,table1[i]) = dr;
