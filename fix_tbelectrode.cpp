@@ -530,7 +530,7 @@ void Fixtbel::fill_fock(Ref<MatrixXd> fock_ab){
 		dy = (x[i][1]-x[j][1]);
 		dy = dy - (yhi-ylo) * (int) (dy/(yhi-ylo));
 		dz = (x[i][2]-x[j][2]);
-		dz = dz - (zhi-zlo) * (int) (dz/(zhi-zlo));
+		dz = dz;
 		dr = dx*dx + dy*dy + dz*dz;
 		if(dr<36){
 			//printf("inside if2\n");
